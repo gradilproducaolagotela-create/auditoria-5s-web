@@ -35,7 +35,7 @@
          ========================================
         */
         body.dark-mode {
-            --primary-highlight: #FF4444; /* Vermelho mais vibrante no escuro */
+            --primary-highlight: #FF4444; 
             --primary-teal: #4BC0C0; 
             --primary-dark: #004E4E;
             --background-body: linear-gradient(135deg, #1f2833, #0a111a); 
@@ -80,7 +80,7 @@
 
         .header-top {
             display: flex;
-            justify-content: center; /* Centraliza itens no cabeçalho */
+            justify-content: center; /* Centraliza a logo no topo */
             align-items: flex-start;
             margin-bottom: 35px;
             position: relative; /* Para posicionar o botão de tema */
@@ -107,6 +107,7 @@
         
         h2 {
             color: var(--text-secondary);
+            text-align: center;
             font-size: 1em;
             margin-bottom: 30px;
             font-weight: 400;
@@ -364,7 +365,7 @@
         </button>
         
         <div class="header-logo">
-            <img src="Lagotela40anos" 
+            <img src="LAgotela-40-Anos-logo-02-1-1024x159.png" 
                  alt="Logotipo Lagotela" 
                  class="logo-img">
                  
@@ -536,7 +537,7 @@
                     <input type="radio" id="shitsuke-q1-5" name="shitsuke-q1" value="5" required><label for="shitsuke-q1-5" title="Excelente (5)">★</label>
                     <input type="radio" id="shitsuke-q1-4" name="shitsuke-q1" value="4"><label for="shitsuke-q1-4" title="Bom (4)">★</label>
                     <input type="radio" id="shitsuke-q1-3" name="shitsuke-q1" value="3"><label for="shitsuke-q1-3" title="Regular (3)">★</label>
-                    <input type="radio" id="shitsuke-q1-2" name="shitsuke-q1" value="2"><label for="shitsuke-q1-2" title="Ruim (2)">★</label>
+                    <input type="radio" id="shitsuke-q1-2" name="shitsuke-q2" value="2"><label for="shitsuke-q2-2" title="Ruim (2)">★</label>
                     <input type="radio" id="shitsuke-q1-1" name="shitsuke-q1" value="1"><label for="shitsuke-q1-1" title="Péssimo (1)">★</label>
                 </div>
             </div>
@@ -614,15 +615,13 @@
     // === FUNÇÃO DO GRÁFICO (CHART.JS) ===
     function drawChart(dataScores, labels) {
         const ctx = document.getElementById('pieChart').getContext('2d');
-        const rootStyles = getComputedStyle(document.documentElement);
-        
-        // Cores padrão definidas no CSS
-        const colors = [
-            rootStyles.getPropertyValue('--color-seiri'),
-            rootStyles.getPropertyValue('--color-seiton'),
-            rootStyles.getPropertyValue('--color-seiso'),
-            rootStyles.getPropertyValue('--color-seiketsu'),
-            rootStyles.getPropertyValue('--color-shitsuke')
+        // Usando o JavaScript para definir as cores que o CSS não definiu, para garantir que o gráfico sempre funcione
+        const defaultColors = [
+            '#E30712', // Vermelho (Seiri)
+            '#008080', // Teal (Seiton)
+            '#FFD700', // Dourado (Seiso)
+            '#4BC0C0', // Ciano Claro (Seiketsu)
+            '#5C6BC0'  // Azul Claro (Shitsuke)
         ];
         
         // Destruir o gráfico anterior se existir
@@ -639,7 +638,7 @@
                 labels: labels,
                 datasets: [{
                     data: dataScores,
-                    backgroundColor: colors,
+                    backgroundColor: defaultColors,
                     hoverOffset: 4
                 }]
             },
@@ -674,133 +673,137 @@
     const copyButton = document.getElementById('copy-button');
     let lastExportData = '';
 
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); 
+    // Correção: Adicionar o listener para o evento DOMContentLoaded garante que o script só rode depois que o HTML for carregado, evitando bugs de elementos não encontrados.
+    document.addEventListener('DOMContentLoaded', function() {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); 
 
-        if (!usernameInput.value || !sectorInput.value) {
-            alert('Por favor, preencha seu Nome/Usuário e o Setor Avaliado.');
-            return;
-        }
+            if (!usernameInput.value || !sectorInput.value) {
+                alert('Por favor, preencha seu Nome/Usuário e o Setor Avaliado.');
+                return;
+            }
 
-        const formData = new FormData(form);
-        const results = {
-            'Data_Avaliacao': new Date().toLocaleString('pt-BR'),
-            'Auditor_Usuario': usernameInput.value.replace(/;/g, ',').trim(), 
-            'Setor': sectorInput.value.replace(/;/g, ',').trim() 
-        };
+            const formData = new FormData(form);
+            const results = {
+                'Data_Avaliacao': new Date().toLocaleString('pt-BR'),
+                'Auditor_Usuario': usernameInput.value.replace(/;/g, ',').trim(), 
+                'Setor': sectorInput.value.replace(/;/g, ',').trim() 
+            };
 
-        let totalQuestions = 0;
-        let totalScore = 0;
-        let questionsData = [];
-        
-        const sensoScores = { 'Seiri': {sum: 0, count: 0}, 'Seiton': {sum: 0, count: 0}, 'Seiso': {sum: 0, count: 0}, 'Seiketsu': {sum: 0, count: 0}, 'Shitsuke': {sum: 0, count: 0} };
-        
-        // Mapeamento das perguntas
-        const questionMap = {
-            'seiri-q1': 'Seiri: Materiais/Equipamentos Espalhados?',
-            'seiri-q2': 'Seiri: Itens Quebrados/Obsoletos?',
-            'seiri-q3': 'Seiri: Itens Próximos de Uso?',
-            'seiri-q4': 'Seiri: Descarte Correto?',
-            'seiton-q1': 'Seiton: Itens Identificados?',
-            'seiton-q2': 'Seiton: Locais Definidos?',
-            'seiton-q3': 'Seiton: Facilidade de Encontrar?',
-            'seiso-q1': 'Seiso: Setor Livre de Sujeira?',
-            'seiso-q2': 'Seiso: Equipamentos Limpos/Conservados?',
-            'seiketsu-q1': 'Seiketsu: Procedimentos Visíveis/Seguidos?',
-            'seiketsu-q2': 'Seiketsu: Sinalização Clara?',
-            'shitsuke-q1': 'Shitsuke: Colaboradores Seguem Regras?',
-            'shitsuke-q2': 'Shitsuke: Participação Ativa?',
-        };
+            let totalQuestions = 0;
+            let totalScore = 0;
+            let questionsData = [];
+            
+            const sensoScores = { 'Seiri': {sum: 0, count: 0}, 'Seiton': {sum: 0, count: 0}, 'Seiso': {sum: 0, count: 0}, 'Seiketsu': {sum: 0, count: 0}, 'Shitsuke': {sum: 0, count: 0} };
+            
+            // Mapeamento das perguntas
+            const questionMap = {
+                'seiri-q1': 'Seiri: Materiais/Equipamentos Espalhados?',
+                'seiri-q2': 'Seiri: Itens Quebrados/Obsoletos?',
+                'seiri-q3': 'Seiri: Itens Próximos de Uso?',
+                'seiri-q4': 'Seiri: Descarte Correto?',
+                'seiton-q1': 'Seiton: Itens Identificados?',
+                'seiton-q2': 'Seiton: Locais Definidos?',
+                'seiton-q3': 'Seiton: Facilidade de Encontrar?',
+                'seiso-q1': 'Seiso: Setor Livre de Sujeira?',
+                'seiso-q2': 'Seiso: Equipamentos Limpos/Conservados?',
+                'seiketsu-q1': 'Seiketsu: Procedimentos Visíveis/Seguidos?',
+                'seiketsu-q2': 'Seiketsu: Sinalização Clara?',
+                'shitsuke-q1': 'Shitsuke: Colaboradores Seguem Regras?',
+                'shitsuke-q2': 'Shitsuke: Participação Ativa?',
+            };
 
-        // Coleta os valores e calcula a média por senso
-        let allAnswered = true;
-        for (const [key, value] of formData.entries()) {
-            if (key in questionMap) {
-                const score = parseInt(value);
-                
-                if (isNaN(score)) {
-                    allAnswered = false;
-                    break;
+            // Coleta os valores e calcula a média por senso
+            let allAnswered = true;
+            for (const [key, value] of formData.entries()) {
+                if (key in questionMap) {
+                    const score = parseInt(value);
+                    
+                    if (isNaN(score)) {
+                        allAnswered = false;
+                        break;
+                    }
+                    
+                    const sensoName = key.split('-')[0].charAt(0).toUpperCase() + key.split('-')[0].slice(1);
+                    
+                    sensoScores[sensoName].sum += score;
+                    sensoScores[sensoName].count++;
+                    
+                    results[questionMap[key]] = score;
+                    totalScore += score;
+                    totalQuestions++;
+                    
+                    questionsData.push({
+                        key: questionMap[key],
+                        score: score
+                    });
                 }
-                
-                const sensoName = key.split('-')[0].charAt(0).toUpperCase() + key.split('-')[0].slice(1);
-                
-                sensoScores[sensoName].sum += score;
-                sensoScores[sensoName].count++;
-                
-                results[questionMap[key]] = score;
-                totalScore += score;
-                totalQuestions++;
-                
-                questionsData.push({
-                    key: questionMap[key],
-                    score: score
-                });
             }
-        }
-        
-        if (!allAnswered || questionsData.length !== Object.keys(questionMap).length) {
-            alert('Por favor, preencha todos os campos da auditoria antes de gerar os resultados.');
-            return;
-        }
-
-
-        const averageScore = totalQuestions > 0 ? (totalScore / totalQuestions).toFixed(2) : 0;
-        const averagePercentage = totalQuestions > 0 ? ((averageScore / 5) * 100).toFixed(2) : 0;
-
-        results.Media_Pontuacao_5S = averageScore;
-        results.Media_Percentual_5S = averagePercentage + '%';
-        
-        // 1. Cálculo das médias por Senso para o Gráfico
-        const chartLabels = [];
-        const chartData = [];
-        
-        for (const senso in sensoScores) {
-            if (sensoScores[senso].count > 0) {
-                const sensoAvg = (sensoScores[senso].sum / sensoScores[senso].count).toFixed(2);
-                chartLabels.push(`${senso} (${sensoAvg}/5)`);
-                chartData.push(parseFloat(sensoAvg));
+            
+            if (!allAnswered || questionsData.length !== Object.keys(questionMap).length) {
+                alert('Por favor, preencha todos os campos da auditoria antes de gerar os resultados.');
+                return;
             }
-        }
-        
-        // 2. Desenhar o Gráfico de Pizza
-        drawChart(chartData, chartLabels);
-        
-        // 3. Exibir a Média Geral e a Área de Resultados
-        scoreSummary.innerHTML = `
-            <i class="fas fa-map-marked-alt"></i> Setor: <strong>${results.Setor}</strong><br>
-            <i class="fas fa-star"></i> Média Geral 5S: <strong>${results.Media_Pontuacao_5S}/5</strong> (${results.Media_Percentual_5S})
-        `;
-        resultsArea.style.display = 'block';
-        outputDiv.style.display = 'none'; 
-        
-        // 4. Geração do CSV 
-        let csvHeader = [
-            'Data_Avaliacao',
-            'Auditor_Usuario',
-            'Setor'
-        ].concat(questionsData.map(d => d.key)).concat([
-            'Media_Pontuacao_5S',
-            'Media_Percentual_5S'
-        ]).join(';');
 
-        let csvRowData = [
-            results.Data_Avaliacao,
-            results.Auditor_Usuario,
-            results.Setor
-        ].concat(questionsData.map(d => d.score)).concat([
-            results.Media_Pontuacao_5S,
-            results.Media_Percentual_5S
-        ]);
-        
-        let csvRow = csvRowData.map(v => `"${v}"`).join(';'); 
-        lastExportData = csvHeader + '\n' + csvRow;
-        
-        alert(`Auditoria finalizada com sucesso!\nMédia: ${averageScore}/5 (${averagePercentage}%)`);
 
-        // Rola a tela para a área de resultados
-        resultsArea.scrollIntoView({ behavior: 'smooth' });
+            const averageScore = totalQuestions > 0 ? (totalScore / totalQuestions).toFixed(2) : 0;
+            const averagePercentage = totalQuestions > 0 ? ((averageScore / 5) * 100).toFixed(2) : 0;
+
+            results.Media_Pontuacao_5S = averageScore;
+            results.Media_Percentual_5S = averagePercentage + '%';
+            
+            // 1. Cálculo das médias por Senso para o Gráfico
+            const chartLabels = [];
+            const chartData = [];
+            
+            for (const senso in sensoScores) {
+                if (sensoScores[senso].count > 0) {
+                    const sensoAvg = (sensoScores[senso].sum / sensoScores[senso].count).toFixed(2);
+                    chartLabels.push(`${senso} (${sensoAvg}/5)`);
+                    chartData.push(parseFloat(sensoAvg));
+                }
+            }
+            
+            // 2. Desenhar o Gráfico de Pizza
+            drawChart(chartData, chartLabels);
+            
+            // 3. Exibir a Média Geral e a Área de Resultados
+            scoreSummary.innerHTML = `
+                <i class="fas fa-map-marked-alt"></i> Setor: <strong>${results.Setor}</strong><br>
+                <i class="fas fa-star"></i> Média Geral 5S: <strong>${results.Media_Pontuacao_5S}/5</strong> (${results.Media_Percentual_5S})
+            `;
+            resultsArea.style.display = 'block';
+            outputDiv.style.display = 'none'; 
+            
+            // 4. Geração do CSV 
+            let csvHeader = [
+                'Data_Avaliacao',
+                'Auditor_Usuario',
+                'Setor'
+            ].concat(questionsData.map(d => d.key)).concat([
+                'Media_Pontuacao_5S',
+                'Media_Percentual_5S'
+            ]).join(';');
+
+            let csvRowData = [
+                results.Data_Avaliacao,
+                results.Auditor_Usuario,
+                results.Setor
+            ].concat(questionsData.map(d => d.score)).concat([
+                results.Media_Pontuacao_5S,
+                results.Media_Percentual_5S
+            ]);
+            
+            let csvRow = csvRowData.map(v => `"${v}"`).join(';'); 
+            lastExportData = csvHeader + '\n' + csvRow;
+            
+            alert(`Auditoria finalizada com sucesso!\nMédia: ${averageScore}/5 (${averagePercentage}%)`);
+
+            // Rola a tela para a área de resultados
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        });
     });
+
 
     function exportData() {
         if (!lastExportData) {
